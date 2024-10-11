@@ -26,7 +26,7 @@ while needs_to_try:
         needs_to_try = False
     else:
         needs_to_try = True
-
+# ------------------------------ billboard ------------------------------
 URL = "https://www.billboard.com/charts/hot-100/" + date
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
@@ -43,4 +43,8 @@ titles = [title.getText().replace('Producer(s):', '') for title in all_titles[7:
 song_titles = [title.strip() for title in titles]
 
 song_titles = song_titles[::2]
-print(song_titles)
+# print(song_titles)
+# ------------------------------ spotify ------------------------------
+# ---------- CREATE PLAY LIST
+endpoint = "https://api.spotify.com/v1/users/{user_id}/playlists"
+
