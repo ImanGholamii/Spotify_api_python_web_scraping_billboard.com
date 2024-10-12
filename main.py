@@ -49,7 +49,8 @@ def validate_date_format(date_string, format_):
 # print(song_titles)
 # ------------------------------ spotify ------------------------------
 # ---------- CREATE PLAY LIST
-scope = 'playlist-modify-private'
+# scope = 'playlist-modify-private'  # STEP 1 to make a private playlist
+scope = 'playlist-read-private'  # STEP 2 to read the private playlists
 spotify = client.Spotify(
     requests_timeout=20,
     retries=2,
@@ -61,9 +62,31 @@ spotify = client.Spotify(
     ),
 )
 
+# --------- GET USER INFO
 user_info = spotify.current_user()
-print(user_info)
+username = user_info['display_name']
+user_id = user_info['id']
 
 
+# ---------- CREATE NEW PRIVATE PLAYLIST
+def create_playlist():
+    spotify.user_playlist_create(
+        user=user_id,
+        name='PyPlaylist',
+        public=False,
+        collaborative=False,
+        description='First Private playlist made by webapi'
+    )
+
+
+# ---------- GET CURRENT USER'S PLAYLISTS
+# create_playlist()  # STEP 1 to make a private playlist
+playlists = spotify.current_user_playlists()
+playlists_id = [(item['name'], item['id']) for item in playlists['items']]
+private_playlist_id = playlists_id[0][1]
+
+
+
+# spotify.playlist_add_items(playlist_id=private_playlist_id, items='')
 
 
