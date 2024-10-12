@@ -1,8 +1,4 @@
-from datetime import datetime
-
-from bs4 import BeautifulSoup
 from decouple import config
-from requests import get
 
 from spotipy import client
 from spotipy.oauth2 import SpotifyOAuth
@@ -10,18 +6,17 @@ from spotipy.oauth2 import SpotifyOAuth
 CLIENT_ID = config('CLIENT_ID')
 CLIENT_SECRET = config('CLIENT_SECRET')
 
-
-def validate_date_format(date_string, format_):
-    try:
-        date_parts = date_string.split('-')
-        year, month, day = date_parts[0], date_parts[1], date_parts[2]
-        if len(year) == 4 and len(month) == 2 and len(day) == 2:
-            datetime.strptime(date_string, format_)
-            return True
-    except ValueError:
-        return False
-
-
+# def validate_date_format(date_string, format_):
+#     try:
+#         date_parts = date_string.split('-')
+#         year, month, day = date_parts[0], date_parts[1], date_parts[2]
+#         if len(year) == 4 and len(month) == 2 and len(day) == 2:
+#             datetime.strptime(date_string, format_)
+#             return True
+#     except ValueError:
+#         return False
+#
+#
 # needs_to_try = True
 # while needs_to_try:
 #     date = input("Which date do you want to travel? type date in YYYY-MM-DD format:")
@@ -43,34 +38,50 @@ def validate_date_format(date_string, format_):
 # soup = BeautifulSoup(markup=html_page, features='html.parser')
 # all_titles = soup.find_all(name='h3', class_='c-title')
 # titles = [title.getText().replace('Producer(s):', '') for title in all_titles[7:404:2]]
-# song_titles = [title.strip() for title in titles]
+# songs_title = [title.strip() for title in titles]
 #
-# song_titles = song_titles[::2]
-# print(song_titles)
+# songs_title = songs_title[::2]
+songs_title = [
+    "Bohemian Rhapsody",
+    "Imagine",
+    "Stairway to Heaven",
+    "Hey Jude",
+    "Let It Be"
+]
+
+
 # ------------------------------ spotify ------------------------------
 # ---------- CREATE PLAY LIST
+def set_scope(scope: str):
+    return scope
+
+
+# ---------- CREATE PLAY LIST
 # scope = 'playlist-modify-private'  # STEP 1 to make a private playlist
-scope = 'playlist-read-private'  # STEP 2 to read the private playlists
-spotify = client.Spotify(
-    requests_timeout=20,
-    retries=2,
-    auth_manager=SpotifyOAuth(
-        scope=scope,
-        client_id=CLIENT_ID,
-        client_secret=CLIENT_SECRET,
-        redirect_uri='https://example.com',
-    ),
-)
+# scope = 'playlist-read-private'  # STEP 2 to read the private playlists
+
+def spotify(scope: str):
+    return client.Spotify(
+        requests_timeout=20,
+        retries=2,
+        auth_manager=SpotifyOAuth(
+            scope=scope,
+            client_id=CLIENT_ID,
+            client_secret=CLIENT_SECRET,
+            redirect_uri='https://example.com',
+        ),
+    )
+
 
 # --------- GET USER INFO
-user_info = spotify.current_user()
+user_info = spotify(scope='playlist-modify-private').current_user()
 username = user_info['display_name']
 user_id = user_info['id']
 
 
 # ---------- CREATE NEW PRIVATE PLAYLIST
 def create_playlist():
-    spotify.user_playlist_create(
+    spotify(scope='playlist-modify-private').user_playlist_create(
         user=user_id,
         name='PyPlaylist',
         public=False,
@@ -79,14 +90,29 @@ def create_playlist():
     )
 
 
-# ---------- GET CURRENT USER'S PLAYLISTS
 # create_playlist()  # STEP 1 to make a private playlist
-playlists = spotify.current_user_playlists()
+# ---------- GET CURRENT USER'S PLAYLISTS
+playlists = spotify(scope='playlist-read-private').current_user_playlists()
+print(playlists['items'])
 playlists_id = [(item['name'], item['id']) for item in playlists['items']]
 private_playlist_id = playlists_id[0][1]
+# private_playlist_id = '2NHauSStwgwP6l6GpjHbi3'
+print(private_playlist_id)
 
 
+# ---------- SEARCH USER'S SONGS TITLES
+def get_uris(sound_tracks):
+    uris = []
+    for track in sound_tracks:
+        sound_track_data = spotify(scope='playlist-modify-private').search(q=f'track:{track}', type='track', limit=1)
+        uri = sound_track_data['tracks']['items'][0]['uri']
+        uris.append(uri)
+    return uris
 
-# spotify.playlist_add_items(playlist_id=private_playlist_id, items='')
 
+uris_list = get_uris(sound_tracks=songs_title)
 
+# ---------- ADD USER'S SONGS TO PLAYLIST
+
+spotify(scope='playlist-modify-private').playlist_add_items(playlist_id=private_playlist_id, items=uris_list,
+                                                            position=0)
